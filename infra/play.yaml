@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: open-webui
+spec:
+  restartPolicy: Always
+
+  containers:
+    - name: open-webui
+      image: ghcr.io/open-webui/open-webui:slim
+
+      env:
+        - name: WEBUI_SECRET_KEY
+          value: "34a11c9a1f5782321284d17ee401adc3c13fda625d1ba118730c1e81417ccc17"
+
+        # Apache Tika
+        - name: CONTENT_EXTRACTION_ENGINE
+          value: "tika"
+        - name: TIKA_SERVER_URL
+          value: "http://localhost:9998"
+        - name: TIKA_SERVER_VERSION
+          value: "3"
+
+      ports:
+        - name: http
+          containerPort: 8080
+          hostPort: 3000
+
+      volumeMounts:
+        - name: data
+          mountPath: /app/backend/data
+
+    - name: tika
+      image: docker.io/apache/tika:latest-full
+
+      ports:
+        - name: tika
+          containerPort: 9998
+
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: open-webui-pvc
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: open-webui-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+
+  resources:
+    requests:
+      storage: 10Gi
